@@ -6,7 +6,7 @@
 
 typedef unsigned long SSL_ERR;
 
-int main(int argc, void *argv[]) {
+int main(int argc, char *argv[]) {
    BIO *bio;
    SSL *ssl;
    SSL_ERR err;
