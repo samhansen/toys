@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 typedef unsigned long SSL_ERR;
+#define BUFFSZ 8192
 
 int main(int argc, char **argv) {
    BIO *bio;
@@ -23,8 +24,8 @@ int main(int argc, char **argv) {
    char *port = "443";
 
    char *sendtemplate = "HEAD / HTTP/1.1\r\nHost: %s\r\n\r\n";
-   char sendbuf[8192];
-   char recvbuf[8192];
+   char sendbuf[BUFFSZ];
+   char recvbuf[BUFFSZ];
    int nbytes;
 
    SSL_library_init();
@@ -48,7 +49,7 @@ int main(int argc, char **argv) {
       }
    }
 
-   sprintf(sendbuf, sendtemplate, host);
+   snprintf(sendbuf, BUFFSZ, sendtemplate, host);
 
    if(!ctx) {
       err = ERR_get_error();
