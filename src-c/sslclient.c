@@ -1,9 +1,9 @@
 /*******************************************************************************
 * This is a basic ssl client example.  This program needs to be linked against
-* the libcrypto and libssl (available via openssl).  We send an HTTP HEAD
-* request and display the headers sent back.
+* the and libssl (available via openssl).  We send an HTTP HEAD request and
+* display the headers sent back.
 *
-* gcc -Wall -o ex sslclient.c -lssl -lcrypto
+* gcc -Wall -o ex sslclient.c -lssl
 *******************************************************************************/
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
