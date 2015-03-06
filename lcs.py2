@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+"""Compute the longest common subsequence (LCS) between two strings.
+
+Usage: lcs.py <filename>.
+
+Author: Sam Hansen <solid.se7en@gmail.com>
+"""
+
+import logging
+import sys
+
+
+class Memoized(object):
+  """Memoized function decorator."""
+
+  def __init__(self, function):
+    self._function = function
+    self._memo = {}
+
+  def __call__(self, *args):
+    try:
+      return self._memo[args]
+    except KeyError:
+      self._memo[args] = self._function(*args)
+      return self._memo[args]
+
+
+def Longest(s1, s2):
+  """Returns the longest of two strings."""
+  return s1 if len(s1) > len(s2) else s2
+
+
+@Memoized
+def LCS(s1, s2):
+  """Returns the LCS between s1 and s2."""
+  if not s1 or not s2:
+    return ''
+  elif s1[-1] == s2[-1]:
+    return LCS(s1[:-1], s2[:-1]) + s1[-1]
+  else:
+    return Longest(LCS(s1[:-1], s2), LCS(s1, s2[:-1]))
+
+
+def main(argv):
+  """Program entry."""
+  if len(argv) < 2:
+    print "usage: lcs.py <filename>"
+    return 1
+
+  try:
+    fd = open(argv[1], 'r')
+  except IOError as e:
+    logging.error(str(e))
+    return 1
+
+  while True:
+    line = fd.readline()
+    if line == '':
+      break
+    if line == '\n':
+      continue
+    left, right = line.rstrip('\n').split(';')
+    print LCS(left, right)
+
+  fd.close()
+  return 0
+
+
+if __name__ == '__main__':
+  sys.exit(main(sys.argv))
