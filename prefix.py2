@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+"""Prefix calculator.
+
+Usage: prefix.py <filename>.
+
+Author: Sam Hansen <solid.se7en@gmail.com>
+"""
+
+import collections
+import logging
+import sys
+
+
+class ExactNumber(object):
+  def __init__(self, numerator, denominator=1):
+    self.numerator = long(numerator)
+    self.denominator = long(denominator)
+
+  def Reduce(self):
+    """Reduce x/y to X/1 iff x%y == 0."""
+    if self.numerator % self.denominator == 0:
+      self.numerator /= self.denominator
+      self.denominator = 1
+    return self
+
+  def __add__(self, other):
+    a = self.numerator * other.denominator
+    b = other.numerator * self.denominator
+    return ExactNumber(
+        numerator=a + b,
+        denominator=self.denominator * other.denominator,
+    ).Reduce()
+
+  def __sub__(self, other):
+    a = self.numerator * other.denominator
+    b = other.numerator * self.denominator
+    return ExactNumber(
+        numerator=a - b,
+        denominator=self.denominator * other.denominator,
+    ).Reduce()
+
+  def __mul__(self, other):
+    return ExactNumber(
+        numerator=self.numerator * other.numerator,
+        denominator=self.denominator * other.denominator,
+    ).Reduce()
+
+  def __div__(self, other):
+    return ExactNumber(
+        numerator=self.numerator * other.denominator,
+        denominator=self.denominator * other.numerator,
+    ).Reduce()
+
+  def __long__(self):
+    return self.numerator
+
+  def __str__(self):
+    return '%s/%s' % (self.numerator, self.denominator)
+
+  def __cmp__(self, other):
+    a = self.numerator * other.denominator
+    b = other.numerator * self.denominator
+    return cmp(a, b)
+
+
+def PrefixEval(expr):
+  """Evaluate expression sequence in prefix order."""
+  operators = collections.deque()
+  operands = collections.deque()
+  operations = {
+    '+': lambda a, b: a + b,
+    '-': lambda a, b: a - b,
+    '*': lambda a, b: a * b,
+    '/': lambda a, b: a / b,
+  }
+  for e in expr:
+    if e in ('+', '-', '*', '/'):
+      operators.append(e)
+    else:
+      operands.append(ExactNumber(e))
+
+  # We want operands in stack-order.
+  operands.reverse()
+
+  while True:
+    try:
+      operator = operators.pop()
+    except IndexError:
+      break
+    op1, op2 = operands.pop(), operands.pop()
+    operands.append(operations.get(operator)(op1, op2))
+  return long(operands.pop())
+
+
+def main(argv):
+  """Program entry."""
+  if len(argv) < 2:
+    print "usage: prefix.py2 <filename>"
+    return 1
+
+  try:
+    fd = open(argv[1], 'r')
+  except IOError as e:
+    logging.error(str(e))
+    return 1
+
+  while True:
+    line = fd.readline()
+    if line == '':
+      break
+    print PrefixEval(line.rstrip('\n').split(' '))
+
+  fd.close()
+  return 0
+
+
+if __name__ == '__main__':
+  sys.exit(main(sys.argv))
