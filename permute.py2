@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+"""Permutations calculator.
+
+Usage: permute.py2 <filename>
+
+Author: Sam Hansen <solid.se7en@gmail.com>
+"""
+
+import logging
+import sys
+
+
+def Permute(s):
+  """Basic recursive permutation calculator."""
+  if len(s) == 1:
+    return [s]
+
+  prefix = s[0]
+  suffix = s[1:]
+
+  values = set()
+  for sub in Permute(suffix):
+    for i in xrange(len(sub) + 1):
+      values.add(sub[:i] + prefix + sub[i:])
+  return values
+
+
+def main(argv):
+  """Program entry."""
+  if len(argv) < 2:
+    print "usage: permute.py2 <filename>"
+    return 1
+
+  try:
+    fd = open(argv[1], 'r')
+  except IOError as e:
+    logging.error(str(e))
+    return 1
+
+  while True:
+    line = fd.readline()
+    if line == '':
+      break
+    print ','.join(sorted(Permute(line.rstrip('\n'))))
+
+  fd.close()
+  return 0
+
+
+if __name__ == '__main__':
+  sys.exit(main(sys.argv))
