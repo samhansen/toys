@@ -15,22 +15,21 @@ func score(a, b uint8) int32 {
 	return -3
 }
 
-// Create initial array.
-func mkArray(x, y int) [][]int32 {
-	d := make([][]int32, x)
-	for i := range d {
-		d[i] = make([]int32, y)
-	}
-	return d
+// Holds the recursive sublem solutions.  The selected field holds the globally
+// optimal solution.
+type record struct {
+	selected int32 // Globally optimal.
+	s1Indel  int32 // Locally optimal assuming s1 ends in an indel.
+	s2Indel  int32 // Locally optimal assuming s2 ends in an indel.
 }
 
-func dumpTable(d [][]int32, x, y int) {
-	for i := 0; i < x; i++ {
-		for j := 0; j < x; j++ {
-			fmt.Printf("% 5d", d[i][j])
-		}
-		fmt.Println()
+// Create initial array.
+func mkArray(x, y int) [][]record {
+	d := make([][]record, x)
+	for i := range d {
+		d[i] = make([]record, y)
 	}
+	return d
 }
 
 func max2(a, b int32) int32 {
@@ -53,59 +52,51 @@ func runTable(s1, s2 string) int32 {
 	y := len(s2) + 1
 
 	d := mkArray(x, y)
-	p := mkArray(x, y)
-	q := mkArray(x, y)
 
 	// Initialize d.
-	for i := 0; i < x; i++ {
-		if i == 0 {
-			d[i][0] = 0
-		} else if i == 1 {
-			d[i][0] = -8
-		} else {
-			d[i][0] = -8 - (int32(i) - 1)
-		}
-	}
-
-	for j := 0; j < y; j++ {
-		if j == 0 {
-			d[0][j] = 0
-		} else if j == 1 {
-			d[0][j] = -8
-		} else {
-			d[0][j] = -8 - (int32(j) - 1)
-		}
-	}
-
-	// Initialize p.
-	for j := 1; j < y; j++ {
-		p[0][j] = -999
-	}
-
-	// Initialize q.
 	for i := 1; i < x; i++ {
-		q[i][0] = -999
+		if i == 1 {
+			d[i][0].selected = -8
+		} else {
+			d[i][0].selected = -8 - (int32(i) - 1)
+		}
+	}
+
+	for j := 1; j < y; j++ {
+		if j == 1 {
+			d[0][j].selected = -8
+		} else {
+			d[0][j].selected = -8 - (int32(j) - 1)
+		}
+	}
+
+	for j := 1; j < y; j++ {
+		d[0][j].s1Indel = -999
+	}
+
+	for i := 1; i < x; i++ {
+		d[i][0].s2Indel = -999
 	}
 
 	// Sequence.
 	for i := 1; i < x; i++ {
 		for j := 1; j < y; j++ {
-			p[i][j] = max2(
-				d[i-1][j]-8,
-				p[i-1][j]-1,
+			d[i][j].s1Indel = max2(
+				d[i-1][j].selected-8, // Indel start.
+				d[i-1][j].s1Indel-1,  // Indel extension.
 			)
-			q[i][j] = max2(
-				d[i][j-1]-8,
-				q[i][j-1]-1,
+			d[i][j].s2Indel = max2(
+				d[i][j-1].selected-8, // Indel start.
+				d[i][j-1].s2Indel-1,  // Indel extension.
 			)
-			d[i][j] = max3(
-				d[i-1][j-1]+score(s1[i-1], s2[j-1]),
-				p[i][j],
-				q[i][j],
+			d[i][j].selected = max3(
+				d[i-1][j-1].selected+score(s1[i-1], s2[j-1]),
+				d[i][j].s1Indel,
+				d[i][j].s2Indel,
 			)
 		}
 	}
-	return d[x-1][y-1]
+	return d[x-1][y-1].selected
 }
 
 func main() {
