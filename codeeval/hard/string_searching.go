@@ -1,4 +1,4 @@
-// Dynamic algorithm using O(NM) time and memory.
+// Dynamic algorithm using O(NM) time and linear memory.
 //
 // Dynamic algorithm effectively uses 3 dynamic tables:
 // Table 1:
@@ -19,6 +19,10 @@
 //
 // Rather than performaing a table-backtrack, we carry forward the knowledge of
 // whether we could have successfully backtracked.
+//
+// Since no backtracking is actually required, we can process the table 2-rows
+// at a time allowing us to use linear memory.  Ie. we don't need any more than
+// the current and previous row to compute the Node values for any given row.
 package main
 
 import (
@@ -30,59 +34,62 @@ import (
 )
 
 // Dynamic node.
-// PTR - (path to root) True if there exists a back-path allowing this node to
-//    be matched.
-// ZM - (zero-match) True if the character in S1 can be matched zero times.
+// PTR - True if there exists a path from this node to the root.
+// ZM - True if the character in S0 can be matched zero times.
 // Match - True if the character in S1 matches the character in S0.
 type Node struct {
 	PTR, ZM, Match bool
 }
 
 func contains(s0, s1 string) bool {
-	m := make([][]Node, len(s1))
-	for i := range m {
-		m[i] = make([]Node, len(s0))
-	}
+	row1 := make([]Node, len(s0))
+	row2 := make([]Node, len(s0))
+	// Used to swap the pointers.
+	tmp := make([]Node, len(s0))
 
 	// Initialize first row.
 	for j := 0; j < len(s0); j++ {
 		if s0[j] == s1[0] {
-			m[0][j].PTR = true
-			m[0][j].Match = true
+			row1[j].PTR = true
+			row1[j].Match = true
 		} else if s1[0] == '\032' {
-			m[0][j].PTR = true
-			m[0][j].ZM = true
-			m[0][j].Match = true
+			row1[j].PTR = true
+			row1[j].ZM = true
+			row1[j].Match = true
 		}
 	}
 
-	// Fill table.
+	// Compute the Node values for the next row.
 	if len(s1) > 1 {
 		for i := 1; i < len(s1); i++ {
 			for j := 0; j < len(s0); j++ {
 				if s1[i] == s0[j] {
-					m[i][j].PTR = m[i-1][j].PTR && m[i-1][j].ZM
+					row2[j].PTR = row1[j].PTR && row1[j].ZM
 					if j > 0 {
-						m[i][j].PTR = m[i][j].PTR || m[i-1][j-1].PTR
+						row2[j].PTR = row2[j].PTR || row1[j-1].PTR
 					}
-					m[i][j].ZM = false
-					m[i][j].Match = true
+					row2[j].ZM = false
+					row2[j].Match = true
 				} else if s1[i] == '\032' {
-					m[i][j].PTR = m[i-1][j].PTR && m[i-1][j].ZM
+					row2[j].PTR = row1[j].PTR && row1[j].ZM
 					if j > 0 {
-						m[i][j].PTR = m[i][j].PTR || m[i-1][j-1].PTR || m[i][j-1].PTR
+						row2[j].PTR = row2[j].PTR || row1[j-1].PTR || row2[j-1].PTR
 					}
-					m[i][j].ZM = true
-					m[i][j].Match = true
+					row2[j].ZM = true
+					row2[j].Match = true
 				}
 			}
+			// Swap the pointers and reset row2.
+			tmp = row1
+			row1 = row2
+			row2 = tmp
+			row2 = make([]Node, len(s0))
 		}
 	}
 
-	// Process last row.
-	i := len(s1) - 1
+	// Process last row (saved in row1).
 	for j := 0; j < len(s0); j++ {
-		if m[i][j].PTR {
+		if row1[j].PTR {
 			return true
 		}
 	}
